@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { Activity, Database, MonitorIcon, ChartPie } from "lucide-react";
+import { Activity, Database, MonitorIcon, ChartPie, Users, User, Filter } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { PerformanceChart } from "@/components/dashboard/PerformanceChart";
@@ -10,7 +10,15 @@ import { Button } from "@/components/ui/button";
 import { useLLMData } from "@/hooks/use-llm-data";
 
 const Dashboard = () => {
-  const { data, loading, error, fetchData } = useLLMData();
+  const { 
+    data, 
+    loading, 
+    error, 
+    fetchData, 
+    getTotalRequests, 
+    getUniqueUsers, 
+    getUniqueTenants 
+  } = useLLMData();
   const [recentLogs, setRecentLogs] = useState([]);
 
   useEffect(() => {
@@ -23,7 +31,10 @@ const Dashboard = () => {
     }
   }, [data]);
 
-  const totalRequests = data.length;
+  const totalRequests = getTotalRequests();
+  const uniqueUsers = getUniqueUsers();
+  const uniqueTenants = getUniqueTenants();
+  
   const avgResponseTime = data.length 
     ? Math.round(data.reduce((acc, log) => acc + log.duration_ms, 0) / data.length) 
     : 0;
@@ -64,23 +75,21 @@ const Dashboard = () => {
           <MetricCard
             title="Total Requests"
             value={totalRequests.toLocaleString()}
-            description="Last 7 days"
+            description="All processed requests"
             icon={<Database className="h-4 w-4 text-observability-accent" />}
             trend={{ value: 12, label: "from last week" }}
           />
           <MetricCard
-            title="Average Response Time"
-            value={`${avgResponseTime.toLocaleString()} ms`}
-            description="Response time per request"
-            icon={<Activity className="h-4 w-4 text-observability-accent" />}
-            trend={{ value: -5, label: "from last week" }}
+            title="Unique Users"
+            value={uniqueUsers.toLocaleString()}
+            description="Individual users making requests"
+            icon={<Users className="h-4 w-4 text-observability-accent" />}
           />
           <MetricCard
-            title="Total Tokens Used"
-            value={totalTokens.toLocaleString()}
-            description="Tokens used in all requests"
-            icon={<MonitorIcon className="h-4 w-4 text-observability-accent" />}
-            trend={{ value: 8, label: "from last week" }}
+            title="Unique Tenants"
+            value={uniqueTenants.toLocaleString()}
+            description="Organizations using the API"
+            icon={<User className="h-4 w-4 text-observability-accent" />}
           />
           <MetricCard
             title="Success Rate"
@@ -94,6 +103,28 @@ const Dashboard = () => {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <PerformanceChart data={chartData} title="Performance Trends" />
           <ModelDistribution data={modelData} />
+          <div className="space-y-2 border rounded-lg p-4">
+            <h3 className="font-medium text-lg flex items-center">
+              <Filter className="h-4 w-4 mr-2 text-observability-accent" />
+              Processing Metrics
+            </h3>
+            <MetricCard
+              title="Average Response Time"
+              value={`${avgResponseTime.toLocaleString()} ms`}
+              description="Response time per request"
+              icon={<Activity className="h-4 w-4 text-observability-accent" />}
+              trend={{ value: -5, label: "from last week" }}
+              className="border-none shadow-none"
+            />
+            <MetricCard
+              title="Total Tokens Used"
+              value={totalTokens.toLocaleString()}
+              description="Tokens used in all requests"
+              icon={<MonitorIcon className="h-4 w-4 text-observability-accent" />}
+              trend={{ value: 8, label: "from last week" }}
+              className="border-none shadow-none"
+            />
+          </div>
         </div>
 
         <div className="space-y-4">

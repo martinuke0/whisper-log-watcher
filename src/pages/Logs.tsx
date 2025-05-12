@@ -5,42 +5,51 @@ import { LogsTable } from "@/components/logs/LogsTable";
 import { LogsFilter } from "@/components/logs/LogsFilter";
 import { useLLMData } from "@/hooks/use-llm-data";
 import { Pagination } from "@/components/ui/pagination";
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import { Database, Users, User, Filter } from "lucide-react";
 
 const Logs = () => {
-  const { data, loading, error, fetchData, updateFilters, clearFilters } = useLLMData();
+  const { 
+    data, 
+    loading, 
+    error, 
+    fetchData, 
+    updateFilters, 
+    clearFilters, 
+    filterDataByQuery,
+    getTotalRequests,
+    getUniqueUsers,
+    getUniqueTenants,
+    getUniqueModels
+  } = useLLMData();
+  
   const [page, setPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [filteredData, setFilteredData] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
   
-  const availableModels = [
-    "llama-3.3-70b-instruct-quantized.w8a8",
-    "llama-3.1-8b-instruct",
-    "gpt-4-turbo",
-    "claude-3-haiku"
-  ];
+  // Get available models for filter dropdown
+  const availableModels = getUniqueModels();
 
   useEffect(() => {
     fetchData(100);
   }, []);
 
   useEffect(() => {
-    setFilteredData(data);
-  }, [data]);
+    if (searchQuery) {
+      setFilteredData(filterDataByQuery(searchQuery));
+    } else {
+      setFilteredData(data);
+    }
+  }, [data, searchQuery]);
 
   const handleSearch = (query: string) => {
-    if (!query.trim()) {
-      setFilteredData(data);
-      return;
-    }
-
-    const results = data.filter(log => 
-      log.question.toLowerCase().includes(query.toLowerCase()) ||
-      log.response.toLowerCase().includes(query.toLowerCase()) ||
-      log.request_id.toLowerCase().includes(query.toLowerCase()) ||
-      log.model.toLowerCase().includes(query.toLowerCase())
-    );
-    
-    setFilteredData(results);
+    setSearchQuery(query);
     setPage(1);
   };
 
@@ -52,6 +61,7 @@ const Logs = () => {
 
   const handleClearFilters = () => {
     clearFilters();
+    setSearchQuery("");
     fetchData(100);
     setPage(1);
   };
@@ -67,6 +77,45 @@ const Logs = () => {
       <AppHeader title="Logs" onSearch={handleSearch} />
 
       <main className="flex-1 space-y-4 p-4 md:p-6">
+        {/* Summary metrics */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center">
+                <Database className="h-4 w-4 mr-2 text-observability-accent" />
+                Total Requests
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{getTotalRequests().toLocaleString()}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center">
+                <Users className="h-4 w-4 mr-2 text-observability-accent" />
+                Unique Users
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{getUniqueUsers().toLocaleString()}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center">
+                <User className="h-4 w-4 mr-2 text-observability-accent" />
+                Unique Tenants
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{getUniqueTenants().toLocaleString()}</div>
+            </CardContent>
+          </Card>
+        </div>
+        
         <LogsFilter 
           onApplyFilters={handleApplyFilters} 
           onClearFilters={handleClearFilters}
